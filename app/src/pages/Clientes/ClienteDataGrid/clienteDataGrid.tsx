@@ -1,16 +1,18 @@
 /* eslint-disable no-empty-pattern */
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { Row } from "@/interfaces/dataGrid.interface";
+import { createContext, useContext, useMemo, useState } from "react";
 import { createClienteRows } from "@/helpers/datagrid.helper";
 
-import DataGrid, { Column, ColumnOrColumnGroup, RenderHeaderCellProps } from "react-data-grid";
+import DataGrid, { ColumnOrColumnGroup, RenderHeaderCellProps } from "react-data-grid";
 import "react-data-grid/lib/styles.css";
 import ClientesService from "@/services/clientes.service";
 import { Filter } from "@/interfaces/filter.interface";
 import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
 
-interface ClientesDataGridProps {}
+interface ClientesDataGridProps {
+  rows: any[];
+  setRows: React.Dispatch<React.SetStateAction<any>>;
+}
 
 const FilterContext = createContext<Filter | undefined>(undefined);
 
@@ -22,9 +24,8 @@ function EmptyRowsRenderer() {
   );
 }
 
-function ClientesDataGrid({}: ClientesDataGridProps) {
+function ClientesDataGrid({ rows, setRows }: ClientesDataGridProps) {
   const navigate = useNavigate();
-  const [rows, setRows] = useState<any>([]);
   const [filters, setFilters] = useState(
     (): Filter => ({
       codCliente: "Todos",
@@ -34,12 +35,6 @@ function ClientesDataGrid({}: ClientesDataGridProps) {
       enabled: false
     })
   );
-
-  useEffect(() => {
-    ClientesService.getClientes().then((res: any) => {
-      setRows(res);
-    });
-  }, []);
 
   function FilterRenderer<R>({
     tabIndex,
@@ -236,12 +231,12 @@ function ClientesDataGrid({}: ClientesDataGridProps) {
         <Toaster containerClassName="text-sm" />
         <button
           type="button"
-          className={"w-16 h-8 text-center text-sm self-end p-0 mx-1 " + `${filters.enabled ? "border border-gray-200" : ""}`}
+          className={"w-16 h-8 text-center text-white text-sm self-end p-0 mx-1 bg-gray-900 " + `${filters.enabled ? "border border-gray-200" : ""}`}
           onClick={toggleFilters}
         >
           Filtrar
         </button>
-        <button type="button" className="w-28 h-8 text-center text-sm self-end p-0 mx-1" onClick={clearFilters}>
+        <button type="button" className="w-28 h-8 text-center text-white text-sm self-end p-0 mx-1 bg-gray-900" onClick={clearFilters}>
           Limpar filtros
         </button>
       </div>

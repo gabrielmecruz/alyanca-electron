@@ -1,21 +1,31 @@
 import { useNavigate } from "react-router-dom";
 import ClienteDataGrid from "./ClienteDataGrid/clienteDataGrid";
+import { useEffect, useState } from "react";
+import ClientesService from "@/services/clientes.service";
 
 function Clientes() {
   const navigate = useNavigate();
+  const [rows, setRows] = useState<any>([]);
+
+  useEffect(() => {
+    ClientesService.getClientes().then((res: any) => {
+      setRows(res);
+    });
+  }, []);
 
   return (
     <div className="size-full flex flex-col items-center pt-[5%] pb-[15%] px-[10%] md:px-[10%] lg:py-[5%] lg:px-[16%]">
       <h1 className="text-4xl md:text-5xl mb-5 lg:mb-2">Clientes</h1>
 
-      <ClienteDataGrid />
+      <ClienteDataGrid rows={rows} setRows={setRows} />
 
       <div className="size-full flex justify-around items-end">
         <button
           onClick={() =>
             navigate("/AdicionarCliente", {
               state: {
-                name: "add"
+                name: "add",
+                clientes: rows
               }
             })
           }

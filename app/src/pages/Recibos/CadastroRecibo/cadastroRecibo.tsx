@@ -1,6 +1,6 @@
 /* eslint-disable no-empty-pattern */
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import CNPJInput from "../Forms/CNPJ";
 import { Row } from "@/interfaces/dataGrid.interface";
 import { createCorpoReciboRows } from "@/helpers/datagrid.helper";
@@ -47,19 +47,23 @@ function EmptyRowsRenderer() {
 function CadastroRecibo({}: IRecibosProps) {
   const navigate = useNavigate();
   const param = useParams();
+  const location = useLocation();
+  const recibosPrev = location.state.recibos || [];
+  const isAddMode = location.state.name == "add";
+  const newId = isAddMode && recibosPrev.length != 0 ? recibosPrev[recibosPrev.length - 1].Código_Recibo + 1 : param.id;
+
   const [cnpj, setCNPJ] = useState("");
   const [corpoRows, setCorpoRows] = useState<any>([]);
   const [descricoes, setDescricoes] = useState<any>([]);
-  const [recibos, setRecibos] = useState<any>();
   const [recibo, setRecibo] = useState<any>();
   const [corpoRecibo, setCorpoRecibo] = useState<any>();
   const [valorTotal, setValorTotal] = useState("");
   const [novoRecibo, setNovoRecibo] = useState<any>({
-    codRecibo: undefined,
+    codRecibo: newId,
     emissao: "",
-    baixa: "False",
+    baixa: "Não",
     dataBaixa: "",
-    fechado: "False"
+    fechado: "Não"
   });
   const [clientes, setClientes] = useState<any>([]);
   const [clienteData, setClienteData] = useState<any>();
@@ -74,46 +78,63 @@ function CadastroRecibo({}: IRecibosProps) {
   );
   const [pdfObject, setpdfObject] = useState<any>([]);
 
-  let isAddMode = !param.id;
   let currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-  function obterCorpoRecibo() {
+  function obterCorpoRecibo(corpoRowAux: any) {
     let cr: any = [];
-    CorpoRecibosService.getCorpoRecibos().then((res: any) => {
-      cr = res.filter((cr: any) => cr.Código_Recibo == recibo.Código_Recibo);
-      const somaTotal = cr.reduce((acumulador: number, objetoAtual: any) => {
-        return acumulador + parseFloat(objetoAtual.ValorAPagar);
-      }, 0);
-      setCorpoRows(cr);
-      setValorTotal(currency.format(somaTotal));
+    corpoRowAux.map((r: any) => (r.ValorAPagar = parseFloat(r.ValorAPagar)));
+    cr = corpoRowAux.filter((cr: any) => cr.Código_Recibo == recibo.Código_Recibo);
+    const somaTotal = cr.reduce((acumulador: number, objetoAtual: any) => {
+      return acumulador + parseFloat(objetoAtual.ValorAPagar);
+    }, 0);
+    setCorpoRows(cr);
+    setValorTotal(currency.format(somaTotal));
+  }
+
+  function adicionarCorpoRecibo(data: any) {
+    setCorpoRecibo(data);
+    let corpoRowAux = [...corpoRows, data];
+    setItemObj({ descrição: "Todos", competência: "", valor: 0 });
+    obterCorpoRecibo(corpoRowAux);
+    return toast.success(`Item adicionado ao corpo do recibo`, {
+      position: "bottom-center",
+      style: {
+        width: "264px"
+      }
     });
   }
 
-  function salvarCorpoRecibo(data: any) {
-    CorpoRecibosService.addCorpoRecibo(data).then((res: any) => {
-      if (res.success) {
-        setCorpoRows([...corpoRows, data]);
-        setItemObj({ descrição: "Todos", competência: "", valor: 0 });
-        obterCorpoRecibo();
-        return toast.success(`Item adicionado ao corpo do recibo`, {
-          position: "bottom-center",
-          style: {
-            width: "264px"
-          }
-        });
-      }
-    });
+  function salvarCorpoRecibo(corpoRecibo: any, loading: boolean) {
+    try {
+      CorpoRecibosService.addCorpoRecibo(corpoRecibo).then((res: any) => {
+        if (res.success) {
+          loading = false;
+        }
+      });
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
   }
 
   useEffect(() => {
     ClientesService.getClientes().then((res: any) => {
       setClientes(res);
-      setClienteData(res.find((item: any) => item.Código_Cliente == param.id));
     });
 
-    RecibosService.getRecibos().then((res: any) => {
-      setRecibos(res);
-    });
+    if (!isAddMode) {
+      RecibosService.getRecibo(param.id).then((res: any) => {
+        setRecibo(res.recibo);
+      });
+    } else {
+      setRecibo({
+        Código_Recibo: newId,
+        Emissão: "",
+        Baixa: "Não",
+        Data_Baixa: "",
+        Fechado: "Não"
+      });
+    }
 
     DescricoesService.getDescricoes().then((res: any) => {
       setDescricoes(
@@ -123,23 +144,28 @@ function CadastroRecibo({}: IRecibosProps) {
         }))
       );
     });
+
+    CorpoRecibosService.getCorpoRecibos().then((res: any) => {
+      res.map((r: any) => (r.ValorAPagar = parseFloat(r.ValorAPagar)));
+      setCorpoRows(res);
+    });
   }, []);
 
   useEffect(() => {
-    if (!isAddMode) {
-      if (recibos != undefined) {
-        setRecibo(recibos.find((r: any) => r.Código_Recibo == Number(param.id)));
-      }
+    if (!isAddMode && clientes != undefined) {
+      setClienteData(clientes.find((item: any) => item.Código_Cliente == recibo.Código_Cliente));
+    }
+  }, [clientes]);
+
+  useEffect(() => {
+    if (recibo != undefined) {
+      obterCorpoRecibo(corpoRows);
     }
 
     if (clienteData != undefined) {
       setCNPJ(clienteData.CNPJ);
     }
-
-    if (recibo != undefined) {
-      obterCorpoRecibo();
-    }
-  }, [recibos, clienteData, recibo]);
+  }, [clienteData, recibo]);
 
   const columns = useMemo((): Column<any>[] => {
     return [
@@ -231,7 +257,7 @@ function CadastroRecibo({}: IRecibosProps) {
                   </option>
                   {corpoRows.map((corpo: any, index: number) => {
                     return (
-                      <option key={index} value={currency.format(corpo.ValorAPagar)}>
+                      <option key={index} value={corpo.ValorAPagar}>
                         {currency.format(corpo.ValorAPagar)}
                       </option>
                     );
@@ -253,7 +279,7 @@ function CadastroRecibo({}: IRecibosProps) {
         (recibo != undefined ? recibo.Código_Recibo == r.Código_Recibo : false) &&
         (filters.descricao !== "Todos" ? desc.text == filters.descricao : true) &&
         (filters.competencia !== "" ? r.Competência == filters.competencia : true) &&
-        (filters.valor !== "" ? currency.format(r.ValorAPagar) == filters.valor : true)
+        (filters.valor !== "" ? r.ValorAPagar == filters.valor : true)
       );
     });
   }, [corpoRows, filters, recibo]);
@@ -262,33 +288,35 @@ function CadastroRecibo({}: IRecibosProps) {
     setFilters({
       descricao: "Todos",
       competencia: "",
-      valor: "",
+      valor: "Todos",
       complete: undefined,
       enabled: true
     });
   }
 
   function changeCliente(e: any) {
-    e.preventDefault();
-    setClienteData(clientes.find((item: any) => item.Razão_Social == e.target.value));
-    novoRecibo.Código_Cliente = clienteData.Código_Cliente;
+    let clientData = clientes.find((item: any) => item.Razão_Social == e.target.value);
+    setClienteData(clientData);
+    novoRecibo.Código_Cliente = clientData.Código_Cliente;
   }
 
   async function handleSubmit() {
     let nR = {
       Código_Recibo: novoRecibo.codRecibo != undefined ? Number(novoRecibo.codRecibo) : recibo.Código_Recibo,
-      Emissão: novoRecibo.emissao != undefined ? novoRecibo.emissao : recibo.Emissão,
-      Código_Cliente: recibo.Código_Cliente,
-      Baixa: novoRecibo.baixa != "" ? novoRecibo.baixa : recibo.Emissão,
+      Emissão: novoRecibo.emissao != "" ? novoRecibo.emissao : recibo.Emissão,
+      Código_Cliente: novoRecibo.Código_Cliente != undefined ? novoRecibo.Código_Cliente : recibo.Código_Cliente,
+      Baixa: novoRecibo.baixa != "" ? novoRecibo.baixa : recibo.Baixa,
       Data_Baixa: novoRecibo.dataBaixa != "" ? novoRecibo.dataBaixa : recibo.Data_Baixa,
-      Fechado: novoRecibo.fechado != undefined ? novoRecibo.fechado : recibo.Fechado
+      Fechado: novoRecibo.fechado != "" ? novoRecibo.fechado : recibo.Fechado
     };
 
     if (isAddMode) {
       try {
         await RecibosService.addRecibo(novoRecibo).then((res: any) => {
+          let loading = true;
           if (res.success) {
-            navigate("/TiposRecibos");
+            salvarCorpoRecibo(corpoRecibo, loading);
+            if (!loading) navigate("/TiposRecibos");
           }
         });
       } catch (err) {
@@ -307,9 +335,11 @@ function CadastroRecibo({}: IRecibosProps) {
       try {
         delete recibo.Razão_Social;
         delete recibo.ValorTotal;
-        await RecibosService.updateRecibo(Number(recibo.Código_Recibo), nR).then((res: any) => {
+        await RecibosService.updateRecibo(Number(nR.Código_Recibo), nR).then((res: any) => {
+          let loading = true;
           if (res.success) {
-            navigate("/TiposRecibos");
+            salvarCorpoRecibo(corpoRecibo, loading);
+            if (!loading) navigate("/TiposRecibos");
           }
         });
       } catch (err) {
@@ -358,18 +388,22 @@ function CadastroRecibo({}: IRecibosProps) {
       ValorAPagar: itemObj["valor"]
     };
 
-    salvarCorpoRecibo(corpo);
+    adicionarCorpoRecibo(corpo);
   };
 
   useEffect(() => {
-    if (recibo != undefined && corpoRows != undefined) {
-      let reciboFormatado = recibo;
+    const formatterDate = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
+
+    if (recibo != undefined && corpoRows != undefined && clienteData != undefined) {
+      let reciboFormatado = structuredClone(recibo);
       reciboFormatado.Razão_Social = clienteData.Razão_Social;
       reciboFormatado.ValorTotal = valorTotal;
 
-      let corpoReciboFormatado = corpoRows.map((cr: any) => {
-        cr.Descrição = descricoes.find((item: any) => cr.CodDaDescrição == item.id).text;
-        return cr;
+      let corpoReciboFormatado = structuredClone(corpoRows);
+      corpoReciboFormatado.map((crf: any) => {
+        crf.Descrição = descricoes.find((item: any) => crf.CodDaDescrição == item.id).text;
+        crf.ValorAPagar = currency.format(crf.ValorAPagar);
+        return crf;
       });
 
       let document = {
@@ -470,11 +504,11 @@ function CadastroRecibo({}: IRecibosProps) {
           <input
             type="text"
             id="recibo"
-            defaultValue={recibo?.Código_Recibo}
-            onChange={(e) => (novoRecibo.codRecibo = e.target.value)}
+            defaultValue={novoRecibo.codRecibo}
+            // onChange={(e) => (novoRecibo.codRecibo = e.target.value)}
             className="border text-sm rounded-lg block w-full max-w-20 p-1.5 text-white bg-gray-700 border-gray-600 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 lg:w-52 lg:min-w-10 lg:justify-between"
             placeholder="#001"
-            disabled={!isAddMode}
+            disabled
             required
           />
         </div>
@@ -494,8 +528,8 @@ function CadastroRecibo({}: IRecibosProps) {
           <input
             type="checkbox"
             id="baixa"
-            defaultChecked={recibo?.Baixa == "True"}
-            onChange={(e) => (novoRecibo.baixa = e.target.checked ? "True" : "False")}
+            defaultChecked={recibo?.Baixa == "Sim"}
+            onChange={(e) => (novoRecibo.baixa = e.target.checked ? "Sim" : "Não")}
             className="border rounded-lg block w-full p-1.5 text-white bg-gray-700 border-gray-600 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 lg:w-max"
             required
           />
@@ -516,8 +550,8 @@ function CadastroRecibo({}: IRecibosProps) {
           <input
             type="checkbox"
             id="fechado"
-            defaultChecked={recibo?.Fechado == "True"}
-            onChange={(e) => (novoRecibo.fechado = e.target.checked ? "True" : "False")}
+            defaultChecked={recibo?.Fechado == "Sim"}
+            onChange={(e) => (novoRecibo.fechado = e.target.checked ? "Sim" : "Não")}
             className="border rounded-lg block w-max p-1.5 text-white bg-gray-700 border-gray-600 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 max-md:float-end md:w-full lg:w-max"
             required
           />
@@ -547,7 +581,6 @@ function CadastroRecibo({}: IRecibosProps) {
                   className="w-full focus:outline-none bg-gray-600 text-white"
                   value={itemObj?.descrição}
                   onChange={(e) => changeItemCorpoRecibo(e, "descrição")}
-                  defaultValue="Todos"
                 >
                   <option key="T" value="Todos" disabled>
                     Todos

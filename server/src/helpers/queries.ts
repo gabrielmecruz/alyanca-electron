@@ -54,7 +54,6 @@ async function updateAllById({ tableName, columns, values, id, key }: UpdateAllI
   const colsString = convertCols.toString()
 
   const query = `UPDATE ${tableName} SET ${colsString} WHERE ${key} = ?`
-  console.log(query)
   return await colonQuery(query, [...values, id])
 }
 

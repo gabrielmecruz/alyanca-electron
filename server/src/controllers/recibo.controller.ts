@@ -58,8 +58,6 @@ async function adicionarRecibo(req: Request, res: Response) {
 }
 
 async function atualizarRecibo(req: Request, res: Response) {
-  console.log(req.body)
-
   try {
     const id = Number(req.params.id)
     const { Código_Recibo, Emissão, Código_Cliente, Baixa, Data_Baixa, Fechado } = req.body

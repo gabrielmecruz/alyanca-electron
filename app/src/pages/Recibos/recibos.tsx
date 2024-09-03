@@ -1,21 +1,30 @@
 import { useNavigate } from "react-router-dom";
 import ReciboDataGrid from "./ReciboDataGrid/reciboDataGrid";
+import { useEffect, useState } from "react";
+import RecibosService from "@/services/recibo.service";
 
 function Clientes() {
   const navigate = useNavigate();
+  const [rows, setRows] = useState<any>([]);
 
+  useEffect(() => {
+    RecibosService.getRecibos().then((res: any) => {
+      setRows(res);
+    });
+  }, []);
   return (
     <div className="size-full flex flex-col items-center pt-[5%] pb-[15%] px-[10%] md:px-[10%] lg:py-[5%] lg:px-[16%]">
       <h1 className="text-4xl md:text-5xl mb-5 lg:mb-2">Recibos</h1>
 
-      <ReciboDataGrid />
+      <ReciboDataGrid rows={rows} setRows={setRows} />
 
       <div className="size-full flex justify-around items-end">
         <button
           onClick={() =>
             navigate("/NovoRecibo", {
               state: {
-                name: "add"
+                name: "add",
+                recibos: rows
               }
             })
           }

@@ -2,15 +2,19 @@ import ClientesService from "@/services/clientes.service";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 interface IClienteProps {}
 
 function CadastroCliente({}: IClienteProps) {
   const param = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const clientes = location.state.clientes || [];
+  const isAddMode = location.state.name == "add";
   const [data, setData] = useState<Cliente>();
-  let isAddMode = !param.id;
+  const newId = isAddMode && clientes.length != 0 ? clientes[clientes.length - 1].Código_Cliente + 1 : param.id;
+
   const {
     register,
     handleSubmit,
@@ -21,7 +25,7 @@ function CadastroCliente({}: IClienteProps) {
 
   const onSubmit: SubmitHandler<Cliente> = async (dataForm) => {
     const novoCliente = {
-      Código_Cliente: dataForm.codCliente != 0 ? Number(dataForm.codCliente) : data?.codCliente,
+      Código_Cliente: dataForm.codCliente != undefined ? dataForm.codCliente : data?.codCliente,
       Razão_Social: dataForm.razaoSocial != "" ? dataForm.razaoSocial : data?.razaoSocial,
       Fantasia: dataForm.nomeFantasia != "" ? dataForm.nomeFantasia : data?.nomeFantasia,
       CNPJ: dataForm.cnpj != "" ? dataForm.cnpj : data?.cnpj,
@@ -45,20 +49,12 @@ function CadastroCliente({}: IClienteProps) {
 
     try {
       if (isAddMode) {
-        await ClientesService.addCliente(dataForm).then((res: any) => {
+        await ClientesService.addCliente(novoCliente).then((res: any) => {
           if (res.success) {
             navigate("/Clientes");
           }
         });
       } else {
-        if (data?.codCliente == 0) {
-          return toast.error(`Cliente sem código informado.`, {
-            position: "bottom-center",
-            style: {
-              width: "264px"
-            }
-          });
-        }
         await ClientesService.updateCliente(Number(data?.codCliente), novoCliente).then((res: any) => {
           if (res.success) {
             navigate("/Clientes");
@@ -77,6 +73,28 @@ function CadastroCliente({}: IClienteProps) {
       throw err;
     }
   };
+
+  useEffect(() => {
+    setData({
+      codCliente: newId,
+      razaoSocial: "",
+      nomeFantasia: "",
+      cnpj: "",
+      ie: "",
+      im: "",
+      contatos: ["", ""],
+      telefones: ["", ""],
+      fax: "",
+      emails: ["", ""],
+      site: "",
+      logradouro: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      cep: "",
+      uf: ""
+    });
+  }, []);
 
   useEffect(() => {
     if (!isAddMode) {
@@ -118,20 +136,19 @@ function CadastroCliente({}: IClienteProps) {
         </button>
 
         <div className="w-full flex justify-center">
-          <h1 className="text-5xl max-sm:text-4xl">{data ? <>Editar CLiente</> : <>Adicionar Cliente</>}</h1>
+          <h1 className="text-5xl max-sm:text-4xl">{data ? <>Editar Cliente</> : <>Adicionar Cliente</>}</h1>
         </div>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-2 gap-y-4 my-8 grid-cols-6 w-full lg:gap-6 lg:gap-y-8">
             <div className="col-span-2 mx-4 lg:col-span-1">
               <label className="block mb-1 text-sm font-semibold text-gray-900">Cod. Cliente</label>
               <input
-                type="text"
+                type="number"
                 id="codCliente"
                 defaultValue={data?.codCliente}
-                {...register("codCliente")}
-                onChange={(e) => setValue("codCliente", Number(e.target.value), { shouldValidate: true })}
+                {...register("codCliente", { value: data?.codCliente })}
                 className="border text-white text-sm rounded-lg block w-full p-1.5 bg-gray-700 border-gray-600 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="#001"
+                disabled
                 required
               />
             </div>
@@ -245,7 +262,6 @@ function CadastroCliente({}: IClienteProps) {
                 maxLength={11}
                 {...register("telefones.0")}
                 onChange={(e) => setValue("telefones.0", e.target.value, { shouldValidate: true })}
-                required
               />
             </div>
             <div className="col-span-2 mr-4 mt-4 lg:col-span-1">
@@ -272,7 +288,6 @@ function CadastroCliente({}: IClienteProps) {
                 maxLength={11}
                 {...register("fax")}
                 onChange={(e) => setValue("fax", e.target.value, { shouldValidate: true })}
-                required
               />
             </div>
             <div className="col-span-2 ml-4 lg:col-span-2">
@@ -297,6 +312,7 @@ function CadastroCliente({}: IClienteProps) {
                 className="border text-white text-sm rounded-lg  block w-full p-1.5 bg-gray-700 border-gray-600 placeholder-gray-400 "
                 {...register("emails.1")}
                 onChange={(e) => setValue("emails.1", e.target.value, { shouldValidate: true })}
+                required
               />
             </div>
             <div className="col-span-5 mx-4 lg:col-start-5 lg:col-span-2">
@@ -309,7 +325,6 @@ function CadastroCliente({}: IClienteProps) {
                 placeholder="flowbite.com.br"
                 {...register("site")}
                 onChange={(e) => setValue("site", e.target.value, { shouldValidate: true })}
-                required
               />
             </div>
             <div className="col-span-5 mx-4">
@@ -321,7 +336,6 @@ function CadastroCliente({}: IClienteProps) {
                 className="border text-white text-sm rounded-lg  block w-full p-1.5 bg-gray-700 border-gray-600 placeholder-gray-400 "
                 {...register("logradouro")}
                 onChange={(e) => setValue("logradouro", e.target.value, { shouldValidate: true })}
-                required
               />
             </div>
             <div className="col-span-1 mx-4">
@@ -333,7 +347,6 @@ function CadastroCliente({}: IClienteProps) {
                 className="border text-white text-sm rounded-lg  block w-full p-1.5 bg-gray-700 border-gray-600 placeholder-gray-400 "
                 {...register("numero")}
                 onChange={(e) => setValue("numero", e.target.value, { shouldValidate: true })}
-                required
               />
             </div>
             <div className="col-span-4 mx-4">
@@ -356,7 +369,6 @@ function CadastroCliente({}: IClienteProps) {
                 className="border text-white text-sm rounded-lg  block w-full p-1.5 bg-gray-700 border-gray-600 placeholder-gray-400 "
                 {...register("bairro")}
                 onChange={(e) => setValue("bairro", e.target.value, { shouldValidate: true })}
-                required
               />
             </div>
             <div className="col-start-1 col-span-2 mx-4">
@@ -369,7 +381,6 @@ function CadastroCliente({}: IClienteProps) {
                 placeholder="00.000-000"
                 {...register("cep")}
                 onChange={(e) => setValue("cep", e.target.value, { shouldValidate: true })}
-                required
               />
             </div>
             <div className="col-start-5 col-span-2 mx-4">
@@ -385,7 +396,6 @@ function CadastroCliente({}: IClienteProps) {
                   event.target.value = event.target.value.toUpperCase();
                   setValue("uf", event.target.value, { shouldValidate: true });
                 }}
-                required
               />
             </div>
           </div>

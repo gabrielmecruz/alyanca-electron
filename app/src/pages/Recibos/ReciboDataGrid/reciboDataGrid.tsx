@@ -9,8 +9,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import RecibosService from "@/services/recibo.service";
 import toast, { Toaster } from "react-hot-toast";
 
-interface RecibosDataGridProps {}
-
 const FilterContext = createContext<Filter | undefined>(undefined);
 
 function selectStopPropagation(event: React.KeyboardEvent<HTMLSelectElement>) {
@@ -26,11 +24,14 @@ function EmptyRowsRenderer() {
     </div>
   );
 }
+interface RecibosDataGridProps {
+  rows: any[];
+  setRows: React.Dispatch<React.SetStateAction<any>>;
+}
 
-function ReciboDataGrid({}: RecibosDataGridProps) {
+function ReciboDataGrid({ rows, setRows }: RecibosDataGridProps) {
   const navigate = useNavigate();
   const page = Number(useParams().id);
-  const [rows, setRows] = useState<any>([]);
   const [filters, setFilters] = useState(
     (): Filter => ({
       codRecibo: "Todos",
@@ -43,22 +44,16 @@ function ReciboDataGrid({}: RecibosDataGridProps) {
     })
   );
 
-  useEffect(() => {
-    RecibosService.getRecibos().then((res: any) => {
-      setRows(res);
-    });
-  }, []);
-
   const recibos = useMemo(() => {
     switch (page) {
       case 1:
-        return rows.filter((c: any) => c.Baixa == "False");
+        return rows.filter((c: any) => c.Baixa == "Não");
       case 2:
-        return rows.filter((c: any) => c.Baixa == "True");
+        return rows.filter((c: any) => c.Baixa == "Sim");
       case 3:
-        return rows.filter((c: any) => c.Fechado == "False");
+        return rows.filter((c: any) => c.Fechado == "Não");
       case 4:
-        return rows.filter((c: any) => c.Fechado == "True");
+        return rows.filter((c: any) => c.Fechado == "Sim");
       case 0:
       default:
         return rows;
