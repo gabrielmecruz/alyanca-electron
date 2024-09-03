@@ -1,0 +1,25 @@
+{
+  "name": "alyanca-contabilidade",
+  "version": "1.0.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "author": "Gabriel Mendes Cruz",
+  "description": "",
+  "scripts": {
+    "server:build":"cd server && npm run build",
+    "server:dev":"cd server && npm run dev",
+
+    "app:dev":"cd app && npm run dev",
+    "app:build":"cd app && npm run build",
+
+    "dev": "concurrently \"npm run app:dev\" \"npm run server:dev\"",
+    "build": "tsc -p . -w"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "main": "main.js",
+  "packages": {},
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
