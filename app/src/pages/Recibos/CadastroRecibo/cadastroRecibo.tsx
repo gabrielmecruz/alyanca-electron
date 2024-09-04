@@ -51,6 +51,7 @@ function CadastroRecibo({}: IRecibosProps) {
   const recibosPrev = location.state.recibos || [];
   const isAddMode = location.state.name == "add";
   const newId = isAddMode && recibosPrev.length != 0 ? recibosPrev[recibosPrev.length - 1].Código_Recibo + 1 : param.id;
+  const [loadingCorpo, setloadingCorpo] = useState<boolean>();
 
   const [cnpj, setCNPJ] = useState("");
   const [corpoRows, setCorpoRows] = useState<any>([]);
@@ -104,11 +105,16 @@ function CadastroRecibo({}: IRecibosProps) {
     });
   }
 
-  function salvarCorpoRecibo(corpoRecibo: any, loading: boolean) {
+  async function salvarCorpoRecibo(corpoRecibo: any) {
+    if (!corpoRecibo) {
+      setloadingCorpo(false);
+      return;
+    }
+
     try {
-      CorpoRecibosService.addCorpoRecibo(corpoRecibo).then((res: any) => {
+      await CorpoRecibosService.addCorpoRecibo(corpoRecibo).then((res: any) => {
         if (res.success) {
-          loading = false;
+          setloadingCorpo(false);
         }
       });
     } catch (err) {
@@ -152,7 +158,7 @@ function CadastroRecibo({}: IRecibosProps) {
   }, []);
 
   useEffect(() => {
-    if (!isAddMode && clientes != undefined) {
+    if (!isAddMode && clientes.length != 0 && recibo != undefined) {
       setClienteData(clientes.find((item: any) => item.Código_Cliente == recibo.Código_Cliente));
     }
   }, [clientes]);
@@ -310,13 +316,21 @@ function CadastroRecibo({}: IRecibosProps) {
       Fechado: novoRecibo.fechado != "" ? novoRecibo.fechado : recibo.Fechado
     };
 
+    if (corpoRows.length == 0) {
+      return toast.error(`Recibo sem corpo informado.`, {
+        position: "bottom-center",
+        style: {
+          width: "264px"
+        }
+      });
+    }
+
     if (isAddMode) {
       try {
-        await RecibosService.addRecibo(novoRecibo).then((res: any) => {
-          let loading = true;
+        await RecibosService.addRecibo(nR).then((res: any) => {
           if (res.success) {
-            salvarCorpoRecibo(corpoRecibo, loading);
-            if (!loading) navigate("/TiposRecibos");
+            salvarCorpoRecibo(corpoRecibo);
+            if (!loadingCorpo) navigate("/TiposRecibos");
           }
         });
       } catch (err) {
@@ -336,10 +350,9 @@ function CadastroRecibo({}: IRecibosProps) {
         delete recibo.Razão_Social;
         delete recibo.ValorTotal;
         await RecibosService.updateRecibo(Number(nR.Código_Recibo), nR).then((res: any) => {
-          let loading = true;
           if (res.success) {
-            salvarCorpoRecibo(corpoRecibo, loading);
-            if (!loading) navigate("/TiposRecibos");
+            salvarCorpoRecibo(corpoRecibo);
+            if (!loadingCorpo) navigate("/TiposRecibos");
           }
         });
       } catch (err) {

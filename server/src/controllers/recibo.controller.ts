@@ -32,9 +32,9 @@ async function obterRecibo(req: Request, res: Response) {
 
 async function adicionarRecibo(req: Request, res: Response) {
   try {
-    const { Emissão, Código_Cliente, Baixa, Data_Baixa, Fechado } = req.body
+    const { Código_Recibo, Emissão, Código_Cliente, Baixa, Data_Baixa, Fechado } = req.body
 
-    const recibo = await Recibo.create(Emissão, Código_Cliente, Baixa, Data_Baixa, Fechado)
+    const recibo = await Recibo.create(Código_Recibo, Emissão, Código_Cliente, Baixa, Data_Baixa, Fechado)
 
     if (!recibo.affectedRows) {
       res.json({
