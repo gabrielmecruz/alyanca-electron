@@ -252,12 +252,12 @@ function ReciboDataGrid({ rows, setRows }: RecibosDataGridProps) {
         <Toaster containerClassName="text-sm" />
         <button
           type="button"
-          className={"w-16 h-8 text-center text-sm self-end p-0 mx-1 " + `${filters.enabled ? "border border-gray-200" : ""}`}
+          className={"w-16 h-8 text-center text-white text-sm self-end p-0 mx-1 bg-gray-900 " + `${filters.enabled ? "border border-gray-200" : ""}`}
           onClick={toggleFilters}
         >
           Filtrar
         </button>
-        <button type="button" className="w-28 h-8 text-center text-sm self-end p-0 mx-1" onClick={clearFilters}>
+        <button type="button" className="w-28 h-8 text-center text-white text-sm self-end p-0 mx-1 bg-gray-900" onClick={clearFilters}>
           Limpar filtros
         </button>
       </div>

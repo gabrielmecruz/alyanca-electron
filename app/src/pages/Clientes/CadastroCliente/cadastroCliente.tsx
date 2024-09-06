@@ -13,7 +13,7 @@ function CadastroCliente({}: IClienteProps) {
   const clientes = location.state.clientes || [];
   const isAddMode = location.state.name == "add";
   const [data, setData] = useState<Cliente>();
-  const newId = isAddMode && clientes.length != 0 ? clientes[clientes.length - 1].Código_Cliente + 1 : param.id;
+  const newId = clientes.length != 0 ? clientes[clientes.length - 1].Código_Cliente + 1 : 1;
 
   const {
     register,
@@ -76,7 +76,7 @@ function CadastroCliente({}: IClienteProps) {
 
   useEffect(() => {
     setData({
-      codCliente: newId,
+      codCliente: isAddMode ? newId : param.id,
       razaoSocial: "",
       nomeFantasia: "",
       cnpj: "",

@@ -50,7 +50,7 @@ function CadastroRecibo({}: IRecibosProps) {
   const location = useLocation();
   const recibosPrev = location.state.recibos || [];
   const isAddMode = location.state.name == "add";
-  const newId = isAddMode && recibosPrev.length != 0 ? recibosPrev[recibosPrev.length - 1].Código_Recibo + 1 : param.id;
+  const newId = recibosPrev.length != 0 ? recibosPrev[recibosPrev.length - 1].Código_Recibo + 1 : 1;
   const [loadingCorpo, setloadingCorpo] = useState<boolean>();
 
   const [cnpj, setCNPJ] = useState("");
@@ -60,7 +60,7 @@ function CadastroRecibo({}: IRecibosProps) {
   const [corpoRecibo, setCorpoRecibo] = useState<any>();
   const [valorTotal, setValorTotal] = useState("");
   const [novoRecibo, setNovoRecibo] = useState<any>({
-    codRecibo: newId,
+    codRecibo: isAddMode ? newId : param.id,
     emissao: "",
     baixa: "Não",
     dataBaixa: "",
@@ -124,13 +124,16 @@ function CadastroRecibo({}: IRecibosProps) {
   }
 
   useEffect(() => {
+    let clientes: any = [];
     ClientesService.getClientes().then((res: any) => {
       setClientes(res);
+      clientes = res;
     });
 
     if (!isAddMode) {
-      RecibosService.getRecibo(param.id).then((res: any) => {
+      RecibosService.getRecibo(Number(param.id)).then((res: any) => {
         setRecibo(res.recibo);
+        setClienteData(clientes.find((item: any) => item.Código_Cliente == res.recibo.Código_Cliente));
       });
     } else {
       setRecibo({
@@ -156,12 +159,6 @@ function CadastroRecibo({}: IRecibosProps) {
       setCorpoRows(res);
     });
   }, []);
-
-  useEffect(() => {
-    if (!isAddMode && clientes.length != 0 && recibo != undefined) {
-      setClienteData(clientes.find((item: any) => item.Código_Cliente == recibo.Código_Cliente));
-    }
-  }, [clientes]);
 
   useEffect(() => {
     if (recibo != undefined) {
@@ -419,16 +416,24 @@ function CadastroRecibo({}: IRecibosProps) {
         return crf;
       });
 
-      let document = {
+      let documentPdf = {
         ...reciboFormatado,
         CorpoRecibo: corpoReciboFormatado
       };
 
-      setpdfObject([document]);
+      setpdfObject([documentPdf]);
     }
   }, [corpoRows, recibo, clienteData, valorTotal]);
 
   function exportPdf() {
+    if (corpoRows.length == 0) {
+      return toast.error(`Recibo sem corpo informado.`, {
+        position: "bottom-center",
+        style: {
+          width: "264px"
+        }
+      });
+    }
     generatePDF(pdfObject);
   }
 
@@ -456,7 +461,7 @@ function CadastroRecibo({}: IRecibosProps) {
             className="border text-white text-sm rounded-lg block w-full p-1.5 bg-gray-700 border-gray-600 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
             onChange={changeCliente}
           >
-            <option key="D" value="DEFAULT" disabled>
+            <option key="D" value="DEFAULT">
               Selecione um cliente
             </option>
             {clientes.map((item: any, index: number) => {

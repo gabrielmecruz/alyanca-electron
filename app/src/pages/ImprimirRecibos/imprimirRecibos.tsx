@@ -32,7 +32,6 @@ function ImprimirRecibos({}: IImprimirRecibosProps) {
   const [dataFinal, setDataFinal] = useState<any>();
   const [valorTotal, setValorTotal] = useState<any>();
   const [descricoes, setDescricoes] = useState<any>([]);
-  const [pdfObject, setpdfObject] = useState<any>([]);
 
   let currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -80,27 +79,6 @@ function ImprimirRecibos({}: IImprimirRecibosProps) {
     }
   }, [recibos, clientes]);
 
-  useEffect(() => {
-    if (recibos != undefined && corpoRecibo != undefined) {
-      recibos.map((r: any) => {
-        let reciboFormatado = r;
-        reciboFormatado.ValorTotal = valorTotal;
-
-        let corpoReciboFormatado = corpoRecibo.map((cr: any) => {
-          cr.Descrição = descricoes.find((item: any) => cr.CodDaDescrição == item.id).text;
-          return cr;
-        });
-
-        let document = {
-          ...reciboFormatado,
-          CorpoRecibo: corpoReciboFormatado
-        };
-
-        setpdfObject([document]);
-      });
-    }
-  }, [corpoRecibo, recibos, valorTotal]);
-
   function generateDatePdf() {
     if (dataInicial == undefined || dataInicial == undefined) {
       return toast.error(`Selecione o intervalo de datas`, {
@@ -113,24 +91,34 @@ function ImprimirRecibos({}: IImprimirRecibosProps) {
     const dataInicio = new Date(dataInicial);
     const dataFim = new Date(dataFinal);
 
-    let recibosFiltrados = recibos.filter((rec: any) => {
+    let recibosFiltrados = structuredClone(recibos).filter((rec: any) => {
       let datePicked = new Date(rec.Emissão);
       return datePicked.getTime() >= dataInicio!.getTime() && datePicked.getTime() <= dataFim!.getTime();
     });
 
-    let corpoReciboFormatado = recibos.map((r: any) => {
-      r.CorpoRecibo = corpoRecibo;
-      r.CorpoRecibo.map((cr: any) => {
-        cr.Descrição = descricoes.find((item: any) => cr.CodDaDescrição == item.id).text;
-        return cr;
-      });
-    });
+    const pdfDocument: any = [];
 
     recibosFiltrados.map((rf: any) => {
-      return rf;
+      let reciboFormatado = rf;
+      reciboFormatado.ValorTotal = valorTotal;
+
+      let corpoReciboFormatado = structuredClone(corpoRecibo).map((cr: any) => {
+        cr.Descrição = descricoes.find((item: any) => cr.CodDaDescrição == item.id).text;
+        cr.ValorAPagar = currency.format(cr.ValorAPagar);
+        return cr;
+      });
+
+      let document = {
+        ...reciboFormatado,
+        CorpoRecibo: corpoReciboFormatado
+      };
+
+      pdfDocument.push(document);
+
+      return pdfDocument;
     });
 
-    generatePDF(pdfObject);
+    generatePDF(pdfDocument);
   }
 
   return (

@@ -31,7 +31,7 @@ function Descricao({}: IDescricaoProps) {
       });
     }
     const newItemObj = {
-      CodDescrição: desc[desc.length - 1].CodDescrição + 1,
+      CodDescrição: desc.length != 0 ? desc[desc.length - 1].CodDescrição + 1 : 1,
       Descrição: newItem
     };
     setDesc([...desc, newItemObj]);
