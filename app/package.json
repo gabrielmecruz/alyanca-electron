@@ -2,7 +2,7 @@
   "name": "alyanca-contabilidade",
   "version": "1.0.0",
   "main": "dist-electron/main/index.js",
-  "type": "module",
+  "type": "commonjs",
   "license": "ISC",
   "private": true,
   "debug": {
@@ -14,17 +14,24 @@
     "name": "Gabriel Mendes Cruz",
     "email": "gabrielmecruz@gmail.com"
   },
+  "description": "Sistema Gerenciador de Recibos Alyança Contabilidade",
+  "icon": "./public/appIcon2.png",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "pree2e": "vite build --mode=test",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "dependencies": {
     "@headlessui/react": "^2.1.2",
     "@reduxjs/toolkit": "^2.2.5",
     "axios": "^1.7.3",
+    "electron-is-dev": "^3.0.1",
+    "electron-squirrel-startup": "^1.0.1",
     "electron-updater": "^6.1.8",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.5.3",
@@ -36,6 +43,14 @@
     "sass": "^1.77.4"
   },
   "devDependencies": {
+    "@electron-forge/cli": "^7.4.0",
+    "@electron-forge/maker-deb": "^7.4.0",
+    "@electron-forge/maker-rpm": "^7.4.0",
+    "@electron-forge/maker-squirrel": "^7.4.0",
+    "@electron-forge/maker-zip": "^7.4.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.4.0",
+    "@electron-forge/plugin-fuses": "^7.4.0",
+    "@electron/fuses": "^1.8.0",
     "@faker-js/faker": "^8.4.1",
     "@playwright/test": "^1.42.1",
     "@types/react": "^18.2.64",
@@ -43,7 +58,6 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.18",
     "electron": "^29.1.1",
-    "electron-builder": "^24.13.3",
     "postcss": "^8.4.35",
     "postcss-import": "^16.0.1",
     "react": "^18.2.0",

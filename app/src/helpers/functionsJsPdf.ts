@@ -9,7 +9,7 @@ function vazia(v: any) {
 }
 
 function pos(busca: any, txt: any, start: any = 0) {
-  var ret = -1,
+  var ret: any = -1,
     c, hits = 0;
   txt = (txt != undefined ? txt : '');
   if (((isArray(busca)) || (busca != '')) &&
@@ -39,7 +39,7 @@ function pos(busca: any, txt: any, start: any = 0) {
         if (ret >= 0) break;
       }
     } else {
-      txt = (isString(txt) ? txt : txt.toString());
+      txt = ((txt.constructor == String) ? txt : txt.toString());
       if (!String.prototype.indexOf) {
         for (c = start; c < txt.length; c++) {
           if (busca[hits] == txt[c]) {
@@ -111,7 +111,7 @@ export function replace(from: any, to: any, txt: any, withRegEx: any = true) {
     var toIsArr = isArray(to),
       c;
     for (c in from) {
-      txt = replace(from[c], toIsArr ? to[Math.min(c as any, to.length - 1)] : to, txt, withStrRepl);
+      txt = replace(from[c], toIsArr ? to[Math.min(c as any, to.length - 1)] : to, txt, withRegEx);
     }
   } else {
     var re,
